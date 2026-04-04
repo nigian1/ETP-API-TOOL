@@ -24,7 +24,7 @@ Data is saved outside the code folder in a directory named `ETP_DATA` to keep th
 
 ## Setup
 
-1.  **API Key**: Create a file named `ENTSOE_API_KEY.txt` in the `ETP API TOOL` directory and paste your API key inside.
+1.  **API Key**: Create a file named `ENTSOE_API_KEY.txt` in the `ETP API TOOL` directory. Paste your API key directly into the file (e.g., `e4140b3e-...`). The script also handles formats like `api='...'` or `api="..."`.
 2.  **Dependencies**:
     ```bash
     pip install pandas requests

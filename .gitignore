@@ -2,3 +2,4 @@ ENTSOE_API_KEY.txt
 __pycache__/
 *.log
 .DS_Store
+SESSION_CONTEXT.md

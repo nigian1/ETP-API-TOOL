@@ -33,6 +33,11 @@ PSR_MAPPING = {
     'B20': 'Other'
 }
 
+DIRECTION_MAPPING = {
+    'A01': 'Up',
+    'A02': 'Down'
+}
+
 class ENTSOEClient:
     BASE_URL = "https://web-api.tp.entsoe.eu/api"
     
@@ -119,76 +124,90 @@ class ENTSOEClient:
         return self.DOMAIN_MAPPING.get(country_code, country_code)
 
     def _parse_xml_generic(self, xml_content):
-        """
-        Generic parser that extracts TimeSeries, Period, and Points.
-        Returns a list of dictionaries with metadata and values.
-        """
-        # Namespaces can vary slightly, but this is the common one for A75/A65
-        # We try to find it dynamically or use a fallback
         try:
             root = ET.fromstring(xml_content)
         except ET.ParseError as e:
             logger.error(f"XML Parse Error: {e}")
             return []
 
-        # Find namespace from root
-        ns_url = ""
-        if '}' in root.tag:
-            ns_url = root.tag.split('}')[0][1:]
+        # Find namespace
+        ns = root.tag.split('}')[0][1:] if '}' in root.tag else ""
         
-        namespace = {'ns': ns_url} if ns_url else {}
+        def find_tag(parent, tag):
+            if ns:
+                return parent.find(f'{{%s}}%s' % (ns, tag))
+            return parent.find(tag)
+            
+        def find_all_tags(parent, tag):
+            if ns:
+                return parent.findall(f'{{%s}}%s' % (ns, tag))
+            return parent.findall(tag)
         
         data = []
-        for timeseries in root.findall('ns:TimeSeries', namespace) if namespace else root.findall('TimeSeries'):
-            # Extract metadata
-            mkt_psr_type = timeseries.find('ns:MktPSRType/ns:psrType', namespace) if namespace else timeseries.find('MktPSRType/psrType')
-            psr_type = mkt_psr_type.text if mkt_psr_type is not None else None
-            
-            business_type = timeseries.find('ns:businessType', namespace) if namespace else timeseries.find('businessType')
-            b_type = business_type.text if business_type is not None else None
-            
-            direction = timeseries.find('ns:flowDirection', namespace) if namespace else timeseries.find('flowDirection')
-            flow_dir = direction.text if direction is not None else None
+        time_series_list = find_all_tags(root, 'TimeSeries')
+        
+        for timeseries in time_series_list:
+            # Extract metadata with dotted tag support
+            def get_text(parent, *tags):
+                for tag in tags:
+                    el = find_tag(parent, tag)
+                    if el is not None:
+                        # If nested, try to find a child (common in CIM)
+                        if not el.text or not el.text.strip():
+                            for child in el:
+                                if child.text and child.text.strip():
+                                    return child.text
+                        return el.text
+                return None
 
-            for period in timeseries.findall('ns:Period', namespace) if namespace else timeseries.findall('Period'):
-                start_str = period.find('ns:timeInterval/ns:start', namespace).text if namespace else period.find('timeInterval/start').text
-                resolution = period.find('ns:resolution', namespace).text if namespace else period.find('resolution').text
+            psr_type = get_text(timeseries, 'MktPSRType', 'mktPSRType.psrType', 'psrType')
+            b_type = get_text(timeseries, 'businessType')
+            flow_dir = get_text(timeseries, 'flowDirection', 'flowDirection.direction')
+
+            for period in find_all_tags(timeseries, 'Period'):
+                interval = find_tag(period, 'timeInterval')
+                if interval is not None:
+                    start_tag = find_tag(interval, 'start')
+                    start_str = start_tag.text if start_tag is not None else None
+                else:
+                    start_str = None
+                
+                res_tag = find_tag(period, 'resolution')
+                resolution = res_tag.text if res_tag is not None else "PT60M"
+                
+                if not start_str: continue
                 start_dt = pd.to_datetime(start_str)
                 
-                # Robustly parse resolution (e.g., PT60M, PT15M, PT4M, PT4S)
                 import re
                 match_m = re.search(r'PT(\d+)M', resolution)
                 match_s = re.search(r'PT(\d+)S', resolution)
+                step = int(match_m.group(1)) if match_m else (int(match_s.group(1))/60.0 if match_s else 60)
                 
-                if match_m:
-                    step = int(match_m.group(1))
-                elif match_s:
-                    # Resolution in minutes (fractional)
-                    step = int(match_s.group(1)) / 60.0
-                else:
-                    logger.warning(f"Unknown resolution format: {resolution}. Defaulting to 60M.")
-                    step = 60
-                
-                for point in period.findall('ns:Point', namespace) if namespace else period.findall('Point'):
-                    pos = int(point.find('ns:position', namespace).text if namespace else point.find('position').text)
-                    qty_element = point.find('ns:quantity', namespace) if namespace else point.find('quantity')
+                for point in find_all_tags(period, 'Point'):
+                    pos_tag = find_tag(point, 'position')
+                    if pos_tag is None: continue
+                    pos = int(pos_tag.text)
                     
-                    if qty_element is not None:
-                        qty = float(qty_element.text)
+                    qty = None
+                    for tag in ['quantity', 'activation_Price.amount', 'price.amount']:
+                        elem = find_tag(point, tag)
+                        if elem is not None:
+                            qty = float(elem.text)
+                            break
+                    
+                    if qty is not None:
                         ts = start_dt + timedelta(minutes=(pos - 1) * step)
-                        
-                        entry = {
+                        data.append({
                             'timestamp': ts,
                             'value': qty,
                             'psr_type': psr_type,
                             'business_type': b_type,
                             'direction': flow_dir
-                        }
-                        data.append(entry)
+                        })
         return data
 
     def query(self, start_date, end_date, country_code='GR', document_type='A75', process_type='A16', 
-              business_type=None, market_product=None, chunk_size_days=5):
+              business_type=None, Standard_MarketProduct=None, chunk_size_days=5):
         domain = self._get_domain(country_code)
         
         start_dt = pd.to_datetime(start_date)
@@ -207,15 +226,18 @@ class ENTSOEClient:
             
             logger.info(f"Fetching {document_type} for {s_str} to {e_str}...")
             
-            chunk_data = self._fetch_with_retries(s_str, e_str, domain, document_type, process_type, 
-                                                 business_type, market_product)
+            chunk_data = self._fetch_with_retries(start_str=s_str, end_str=e_str, domain=domain, 
+                                                 doc_type=document_type, proc_type=process_type, 
+                                                 bus_type=business_type, market_prod=Standard_MarketProduct)
             if chunk_data:
+                logger.info(f"Parsed {len(chunk_data)} points for {s_str}.")
                 all_data.extend(chunk_data)
             
             current_start = current_end
             time.sleep(1) # Rate limit protection
             
         if not all_data:
+            logger.warning(f"No data parsed for the entire range {start_date} - {end_date}.")
             return pd.DataFrame()
             
         df = pd.DataFrame(all_data)
@@ -250,7 +272,9 @@ class ENTSOEClient:
                 response = requests.get(self.BASE_URL, params=params, timeout=120)
                 if response.status_code == 200:
                     self.consecutive_failures = 0 # Reset on success
-                    if "No data found" in response.text:
+                    root_tag = response.text[response.text.find('<'):response.text.find('>', response.text.find('<'))+1]
+                    logger.debug(f"Response root tag: {root_tag}")
+                    if "Acknowledgement_MarketDocument" in response.text and "No data found" in response.text:
                         logger.warning(f"No data found for {start_str} - {end_str}")
                         return []
                     return self._parse_xml_generic(response.content)
@@ -289,13 +313,21 @@ class ENTSOEClient:
             return df_pivot
         elif document_type == 'A65':
             # Total load usually just has one value per timestamp
-            df_res = df.set_index('timestamp')['value'].to_frame('total_load')
+            df_res = df.set_index('timestamp')['value'].to_frame('Total Load (MW)')
             df_res.sort_index(inplace=True)
             return df_res
         elif document_type == 'A84':
             # Pivot by direction
             df_pivot = df.pivot_table(index='timestamp', columns='direction', values='value', aggfunc='first')
-            df_pivot.sort_index(inplace=True)
+            # Rename columns from A01/A02 to Up/Down
+            df_pivot = df_pivot.rename(columns=DIRECTION_MAPPING)
+            # Ensure both Up and Down columns exist
+            for col in ['Up', 'Down']:
+                if col not in df_pivot.columns:
+                    df_pivot[col] = float('nan')
+            
+            # Sort by timestamp
+            df_pivot = df_pivot.sort_index()
             return df_pivot
         else:
             # Generic return

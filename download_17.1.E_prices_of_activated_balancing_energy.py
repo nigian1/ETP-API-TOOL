@@ -65,10 +65,11 @@ def download_balancing_prices_daily(client, start_date_str, end_date_str, area_k
             try:
                 df_daily = client.query(current_dt, next_dt, country_code=eic_code, 
                                       document_type='A84', process_type='A67', 
-                                      business_type='A96', market_product='A01',
+                                      business_type='A96', Standard_MarketProduct='A01',
                                       chunk_size_days=1)
                 
                 if not df_daily.empty:
+                    # Direction A01 = Up, A02 = Down
                     df_daily.to_csv(output_file)
                     logging.info(f"Saved daily file: {output_file}")
                 else:
@@ -94,8 +95,8 @@ if __name__ == "__main__":
             
         with open(key_file, "r") as f:
             key_line = f.read().strip()
-            # Handle both 'KEY' and KEY formats
-            api_key = key_line.split("'")[1] if "'" in key_line else key_line
+            # Robust parsing: handles just the key, api='key', api="key", or api=key
+            api_key = key_line.split('=')[-1].strip("'\" ")
     except Exception as e:
         logger.error(f"Could not load API key from {key_file}: {e}")
         sys.exit(1)
@@ -110,10 +111,11 @@ if __name__ == "__main__":
     # --- CONFIGURATION ---
     START_DATE = "2024-01-01"
     END_DATE = "2024-01-05" 
-    TARGET_AREAS = ['DE_50HZ', 'GR'] 
-    
+    TARGET_AREAS = ['DE_50HZ', 'GR', 'BE'] 
+
     # Output path is now relative to the script location, going one level up to ETP_DATA
     OUTPUT_DIRECTORY = "../ETP_DATA/17.1.E_prices_of_activated_balancing_energy"
-    FILENAME_PATTERN = "balancing_prices_{area}_{date}.csv"
-    
+    FILENAME_PATTERN = "17.1.E_{area}_{date}.csv"
+
     download_balancing_prices_daily(client, START_DATE, END_DATE, TARGET_AREAS, OUTPUT_DIRECTORY, FILENAME_PATTERN)
+
