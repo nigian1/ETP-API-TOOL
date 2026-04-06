@@ -109,9 +109,9 @@ if __name__ == "__main__":
         sys.exit(1)
     
     # --- CONFIGURATION ---
-    START_DATE = "2024-01-01"
-    END_DATE = "2024-01-05" 
-    TARGET_AREAS = ['DE_50HZ', 'GR', 'BE'] 
+    START_DATE = "2025-01-01"
+    END_DATE = "2025-01-03" 
+    TARGET_AREAS = ['BE'] 
 
     # Output path is now relative to the script location, going one level up to ETP_DATA
     OUTPUT_DIRECTORY = "../ETP_DATA/17.1.E_prices_of_activated_balancing_energy"

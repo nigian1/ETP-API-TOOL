@@ -163,26 +163,41 @@ class ENTSOEClient:
             psr_type = get_text(timeseries, 'MktPSRType', 'mktPSRType.psrType', 'psrType')
             b_type = get_text(timeseries, 'businessType')
             flow_dir = get_text(timeseries, 'flowDirection', 'flowDirection.direction')
+            curve_type = get_text(timeseries, 'curveType') or 'A01'
 
             for period in find_all_tags(timeseries, 'Period'):
                 interval = find_tag(period, 'timeInterval')
                 if interval is not None:
                     start_tag = find_tag(interval, 'start')
+                    end_tag = find_tag(interval, 'end')
                     start_str = start_tag.text if start_tag is not None else None
+                    end_str = end_tag.text if end_tag is not None else None
                 else:
                     start_str = None
+                    end_str = None
                 
                 res_tag = find_tag(period, 'resolution')
                 resolution = res_tag.text if res_tag is not None else "PT60M"
                 
-                if not start_str: continue
+                if not start_str or not end_str: continue
                 start_dt = pd.to_datetime(start_str)
+                end_dt = pd.to_datetime(end_str)
                 
                 import re
                 match_m = re.search(r'PT(\d+)M', resolution)
                 match_s = re.search(r'PT(\d+)S', resolution)
-                step = int(match_m.group(1)) if match_m else (int(match_s.group(1))/60.0 if match_s else 60)
                 
+                if match_m:
+                    step_seconds = int(match_m.group(1)) * 60
+                elif match_s:
+                    step_seconds = int(match_s.group(1))
+                else:
+                    step_seconds = 3600
+                
+                total_seconds = (end_dt - start_dt).total_seconds()
+                total_positions = int(round(total_seconds / step_seconds)) if step_seconds > 0 else 0
+                
+                points_dict = {}
                 for point in find_all_tags(period, 'Point'):
                     pos_tag = find_tag(point, 'position')
                     if pos_tag is None: continue
@@ -194,16 +209,34 @@ class ENTSOEClient:
                         if elem is not None:
                             qty = float(elem.text)
                             break
+                    points_dict[pos] = qty
                     
-                    if qty is not None:
-                        ts = start_dt + timedelta(minutes=(pos - 1) * step)
-                        data.append({
-                            'timestamp': ts,
-                            'value': qty,
-                            'psr_type': psr_type,
-                            'business_type': b_type,
-                            'direction': flow_dir
-                        })
+                if curve_type == 'A03':
+                    current_qty = None
+                    for pos in range(1, total_positions + 1):
+                        if pos in points_dict:
+                            current_qty = points_dict[pos]
+                        
+                        if current_qty is not None:
+                            ts = start_dt + timedelta(seconds=(pos - 1) * step_seconds)
+                            data.append({
+                                'timestamp': ts,
+                                'value': current_qty,
+                                'psr_type': psr_type,
+                                'business_type': b_type,
+                                'direction': flow_dir
+                            })
+                else:
+                    for pos, qty in points_dict.items():
+                        if qty is not None:
+                            ts = start_dt + timedelta(seconds=(pos - 1) * step_seconds)
+                            data.append({
+                                'timestamp': ts,
+                                'value': qty,
+                                'psr_type': psr_type,
+                                'business_type': b_type,
+                                'direction': flow_dir
+                            })
         return data
 
     def query(self, start_date, end_date, country_code='GR', document_type='A75', process_type='A16', 

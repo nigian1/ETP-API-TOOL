@@ -70,9 +70,62 @@ if __name__ == "__main__":
         sys.exit(1)
     
     # --- CONFIGURATION ---
-    START_YEAR = 2022
+    START_YEAR = 2024
     END_YEAR = 2024
-    TARGET_COUNTRIES = ['GR'] 
+    TARGET_COUNTRIES = [
+                        "AT",
+                        "BE",
+                        "BG",
+                        "HR",
+                        "CY",
+                        "CZ",
+                        "DK_1",
+                        "DK_2",
+                        "EE",
+                        "FI",
+                        "FR",
+                        "DE_LU",
+                        "GR",
+                        "HU",
+                        "IE",
+                        "IT",
+                        "IT_NORTH",
+                        "IT_CNOR",
+                        "IT_CSUD",
+                        "IT_SUD",
+                        "IT_SARD",
+                        "IT_SICI",
+                        "LV",
+                        "LT",
+                        "LU",
+                        "MT",
+                        "NL",
+                        "NO_1",
+                        "NO_2",
+                        "NO_3",
+                        "NO_4",
+                        "NO_5",
+                        "PL",
+                        "PT",
+                        "RO",
+                        "SK",
+                        "SI",
+                        "ES",
+                        "SE_1",
+                        "SE_2",
+                        "SE_3",
+                        "SE_4",
+                        "CH",
+                        "GB",
+                        "NI",
+                        "RS",
+                        "BA",
+                        "ME",
+                        "MK",
+                        "AL",
+                        "TR",
+                        "UA",
+                        "MD"]
     
     # Output path is now relative to the script location, going one level up to ETP_DATA
     OUTPUT_DIRECTORY = "../ETP_DATA/16.1.B_C_actual_generation_per_type"
