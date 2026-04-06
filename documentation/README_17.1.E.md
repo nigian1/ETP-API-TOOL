@@ -10,12 +10,6 @@ This tool downloads **Prices of Activated Balancing Energy & aFRR CBMPs** from t
 - **BusinessType:** `A96` (aFRR)
 - **MarketProduct:** `A01` (Standard)
 
-## Features
-- **Site Availability Check:** Automatically checks if the ENTSO-E API is up before starting.
-- **Fail-Safe:** Stops execution after 5 consecutive 503 errors or connection failures.
-- **Resumption:** Automatically skips days for which a CSV file already exists.
-- **Daily Chunking:** Downloads data in 1-day chunks for maximum reliability.
-
 ## How to Use
 
 1.  **Configure:** Open `ETP API TOOL/download_17.1.E_prices_of_activated_balancing_energy.py` and modify the `START_DATE`, `END_DATE`, and `TARGET_AREAS`.
@@ -23,7 +17,8 @@ This tool downloads **Prices of Activated Balancing Energy & aFRR CBMPs** from t
     ```bash
     python "ETP API TOOL/download_17.1.E_prices_of_activated_balancing_energy.py"
     ```
-3.  **Output:** Data is saved as individual daily CSV files in `ETP API TOOL/balancing_data/`.
+3.  **Output:** Data is saved as individual daily CSV files in `../ETP_DATA/17.1.E_prices_of_activated_balancing_energy/`.
+    The files follow the naming convention: `17.1.E_[AREA]_[DATE].csv`.
 You can use either the **Friendly Alias** or the **Raw EIC Code** in the `target_areas` list.
 
 | Friendly Alias | Area Type | EIC Code |
