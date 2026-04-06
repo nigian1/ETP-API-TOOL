@@ -42,60 +42,58 @@ class ENTSOEClient:
     BASE_URL = "https://web-api.tp.entsoe.eu/api"
     
     DOMAIN_MAPPING = {
-        'AL': '10YAL-KESH-----5', # Albania, Control Area
-        'AT': '10YAT-APG------L', # Austria, Bidding Zone / Control Area
-        'BA': '10YBA-JPCC-----D', # Bosnia and Herz., Control Area
-        'BE': '10YBE----------2', # Belgium, Bidding Zone / Control Area
-        'BG': '10YCA-BULGARIA-R', # Bulgaria, Control Area
-        'CH': '10YCH-SWISSGRIDZ', # Switzerland, Bidding Zone / Control Area
-        'CY': '10YCY-1001A0003J', # Cyprus, Control Area
-        'CZ': '10YCZ-CEPS-----N', # Czech Republic, Bidding Zone / Control Area
-        'DE': '10Y1001A1001A83F', # Germany-Luxembourg-Austria Bidding Zone
-        'DE_50HZ': '10YDE-VE-------2', # 50Hertz, Control Area
-        'DE_AMPRION': '10YDE-RWENET---I', # Amprion, Control Area
-        'DE_TENNET': '10YDE-EON------1', # TenneT GER, Control Area
-        'DE_TRANSNETBW': '10YDE-ENBW-----N', # TransnetBW, Control Area
-        'DK': '10Y1001A1001A65H', # Denmark, Bidding Zone
-        'DK1': '10YDK-1--------W', # Denmark 1, Bidding Zone
-        'DK2': '10YDK-2--------M', # Denmark 2, Bidding Zone
-        'EE': '10Y1001A1001A39X', # Estonia, Bidding Zone / Control Area
-        'ES': '10YES-REE------0', # Spain, Bidding Zone / Control Area
-        'FI': '10YFI-1----------U', # Finland, Bidding Zone / Control Area
-        'FR': '10YFR-RTE------C', # France, Bidding Zone / Control Area
-        'GB': '10YGB----------A', # Great Britain, Bidding Zone / Control Area
-        'GR': '10YGR-HTSO-----Y', # Greece, Bidding Zone / Control Area
-        'HR': '10YHR-HEP------M', # Croatia, Bidding Zone / Control Area
-        'HU': '10YHU-MAVIR----U', # Hungary, Bidding Zone / Control Area
-        'IE': '10YIE-1001A00010', # Ireland (SEM), Bidding Zone
-        'IT': '10YIT-1001A0001E', # Italy, Bidding Zone
-        'IT_NORTH': '10Y1001A1001A73L', # Italy North, Bidding Zone
-        'IT_SARDINIA': '10Y1001A1001A71P', # Italy Sardinia, Bidding Zone
-        'IT_SICILY': '10Y1001A1001A75H', # Italy Sicily, Bidding Zone
-        'LT': '10YLT-1001A0008Q', # Lithuania, Bidding Zone / Control Area
-        'LU': '10YLU-CEGEDEL-NQ', # Luxembourg, Bidding Zone
-        'LV': '10YLV-1001A00074', # Latvia, Bidding Zone / Control Area
-        'ME': '10YME-EPCG-----P', # Montenegro, Control Area
-        'MK': '10YMK-MEPSO----8', # Macedonia, Control Area
-        'NL': '10YNL----------L', # Netherlands, Bidding Zone / Control Area
-        'NO': '10YNO-0--------C', # Norway, Bidding Zone
-        'NO1': '10YNO-1--------2', # Norway 1, Bidding Zone
-        'NO2': '10YNO-2--------T', # Norway 2, Bidding Zone
-        'NO3': '10YNO-3--------J', # Norway 3, Bidding Zone
-        'NO4': '10YNO-4--------9', # Norway 4, Bidding Zone
-        'NO5': '10Y1001A1001A48H', # Norway 5, Bidding Zone
-        'PL': '10YPL-PSE------S', # Poland, Bidding Zone / Control Area
-        'PT': '10YPT-REN------W', # Portugal, Bidding Zone / Control Area
-        'RO': '10YRO-TEL------P', # Romania, Bidding Zone / Control Area
-        'RS': '10YCS-SERBIATSOV', # Serbia, Control Area
-        'SE': '10YSE-1001A0001R', # Sweden, Bidding Zone
-        'SE1': '10Y1001A1001A44P', # Sweden 1, Bidding Zone
-        'SE2': '10Y1001A1001A45N', # Sweden 2, Bidding Zone
-        'SE3': '10Y1001A1001A46L', # Sweden 3, Bidding Zone
-        'SE4': '10Y1001A1001A47J', # Sweden 4, Bidding Zone
-        'SI': '10YSI-ELES-----W', # Slovenia, Bidding Zone / Control Area
-        'SK': '10YSK-SEPS-----K', # Slovakia, Bidding Zone / Control Area
-        'TR': '10YTR-TEIAS----W', # Turkey, Control Area
-        'UA': '10YUA-WEPS-----0', # Ukraine, Bidding Zone
+    "AT"       : "10YAT-APG------L", # Austria (BZN / CTA)
+    "BE"       : "10YBE----------2", # Belgium (BZN / CTA)
+    "BG"       : "10YCA-BULGARIA-R", # Bulgaria (BZN / CTA)
+    "HR"       : "10YHR-HEP------M", # Croatia (BZN / CTA)
+    "CZ"       : "10YCZ-CEPS-----N", # Czech Republic (BZN / CTA)
+    "DK1"      : "10YDK-1--------W", # Denmark 1 - West (BZN)
+    "DK2"      : "10YDK-2--------M", # Denmark 2 - East (BZN)
+    "EE"       : "10Y1001A1001A39I", # Estonia (BZN / CTA)
+    "FI"       : "10YFI-1--------U", # Finland (BZN / CTA)
+    "FR"       : "10YFR-RTE------C", # France (BZN / CTA)
+    "DE_LU"    : "10Y1001A1001A82H", # Germany/Luxembourg (Combined BZN)
+    "GR"       : "10YGR-HTSO-----Y", # Greece (BZN / CTA)
+    "HU"       : "10YHU-MAVIR----U", # Hungary (BZN / CTA)
+    "IE"       : "10YIE-1001A00010", # Ireland (CTA / IE National)
+    "IT"       : "10YIT-GRTN-----B", # Italy (National CTA)
+    "IT_NORTH" : "10Y1001A1001A73I", # Italy North (BZN)
+    "IT_CNOR"  : "10Y1001A1001A70O", # Italy Centre-North (BZN)
+    "IT_CSUD"  : "10Y1001A1001A71M", # Italy Centre-South (BZN)
+    "IT_SUD"   : "10Y1001A1001A788", # Italy South (BZN)
+    "IT_SARD"  : "10Y1001A1001A74G", # Italy Sardinia (BZN)
+    "IT_SICI"  : "10Y1001A1001A75E", # Italy Sicily (BZN)
+    "LV"       : "10YLV-1001A00074", # Latvia (BZN / CTA)
+    "LT"       : "10YLT-1001A0008Q", # Lithuania (BZN / CTA)
+    "LU"       : "10YLU-CEGEDEL-NQ", # Luxembourg (CTA)
+    "MT"       : "10Y1001A1001A93C", # Malta (BZN / CTA)
+    "NL"       : "10YNL----------L", # Netherlands (BZN / CTA)
+    "NO1"      : "10YNO-1--------2", # Norway 1 - Oslo (BZN)
+    "NO2"      : "10YNO-2--------T", # Norway 2 - Kristiansand (BZN)
+    "NO3"      : "10YNO-3--------J", # Norway 3 - Trondheim (BZN)
+    "NO4"      : "10YNO-4--------9", # Norway 4 - Tromsø (BZN)
+    "NO5"      : "10Y1001A1001A48H", # Norway 5 - Bergen (BZN)
+    "PL"       : "10YPL-AREA-----S", # Poland (BZN / CTA)
+    "PT"       : "10YPT-REN------W", # Portugal (BZN / CTA)
+    "RO"       : "10YRO-TEL------P", # Romania (BZN / CTA)
+    "SK"       : "10YSK-SEPS-----K", # Slovakia (BZN / CTA)
+    "SI"       : "10YSI-ELES-----O", # Slovenia (BZN / CTA)
+    "ES"       : "10YES-REE------0", # Spain (BZN / CTA)
+    "SE1"      : "10Y1001A1001A44P", # Sweden 1 - Luleå (BZN)
+    "SE2"      : "10Y1001A1001A45N", # Sweden 2 - Sundsvall (BZN)
+    "SE3"      : "10Y1001A1001A46L", # Sweden 3 - Stockholm (BZN)
+    "SE4"      : "10Y1001A1001A47J", # Sweden 4 - Malmö (BZN)
+    "CH"       : "10YCH-SWISSGRIDZ", # Switzerland (BZN / CTA)
+    "GB"       : "10YGB----------A", # Great Britain (BZN / CTA)
+    "NI"       : "10Y1001A1001A016", # Northern Ireland (SCA / CTA)
+    "RS"       : "10YCS-SERBIATSOV", # Serbia (BZN / CTA)
+    "BA"       : "10YBA-JPCC-----D", # Bosnia and Herzegovina (BZN / CTA)
+    "ME"       : "10YCS-CG-TSO---S", # Montenegro (BZN / CTA)
+    "MK"       : "10YMK-MEPSO----8", # North Macedonia (BZN / CTA)
+    "AL"       : "10YAL-KESH-----5", # Albania (BZN / CTA)
+    "TR"       : "10YTR-TEIAS----W", # Turkey (BZN / CTA)
+    "UA"       : "10Y1001C--00003F", # Ukraine (BZN)
+    "MD"       : "10Y1001A1001A990"  # Moldova (BZN / CTA)
     }
 
     def __init__(self, api_key):
