@@ -215,26 +215,25 @@ class ENTSOEClient:
                         if pos in points_dict:
                             current_qty = points_dict[pos]
                         
-                        if current_qty is not None:
-                            ts = start_dt + timedelta(seconds=(pos - 1) * step_seconds)
-                            data.append({
-                                'timestamp': ts,
-                                'value': current_qty,
-                                'psr_type': psr_type,
-                                'business_type': b_type,
-                                'direction': flow_dir
-                            })
+                        ts = start_dt + timedelta(seconds=(pos - 1) * step_seconds)
+                        data.append({
+                            'timestamp': ts,
+                            'value': current_qty,
+                            'psr_type': psr_type,
+                            'business_type': b_type,
+                            'direction': flow_dir
+                        })
                 else:
-                    for pos, qty in points_dict.items():
-                        if qty is not None:
-                            ts = start_dt + timedelta(seconds=(pos - 1) * step_seconds)
-                            data.append({
-                                'timestamp': ts,
-                                'value': qty,
-                                'psr_type': psr_type,
-                                'business_type': b_type,
-                                'direction': flow_dir
-                            })
+                    for pos in range(1, total_positions + 1):
+                        qty = points_dict.get(pos)
+                        ts = start_dt + timedelta(seconds=(pos - 1) * step_seconds)
+                        data.append({
+                            'timestamp': ts,
+                            'value': qty,
+                            'psr_type': psr_type,
+                            'business_type': b_type,
+                            'direction': flow_dir
+                        })
         return data
 
     def query(self, start_date, end_date, country_code='GR', document_type='A75', process_type='A16', 
@@ -272,7 +271,7 @@ class ENTSOEClient:
             return pd.DataFrame()
             
         df = pd.DataFrame(all_data)
-        return self._post_process(df, document_type)
+        return self._post_process(df, document_type, start_dt, end_dt)
 
     def _fetch_with_retries(self, start_str, end_str, domain, doc_type, proc_type, 
                            bus_type=None, market_prod=None, max_retries=5):
@@ -332,7 +331,7 @@ class ENTSOEClient:
             retries += 1
         return []
 
-    def _post_process(self, df, document_type):
+    def _post_process(self, df, document_type, start_dt=None, end_dt=None):
         if df.empty:
             return df
             
@@ -359,6 +358,26 @@ class ENTSOEClient:
             
             # Sort by timestamp
             df_pivot = df_pivot.sort_index()
+            
+            # Reindex to continuous 4-second granularity if requested range is provided
+            if start_dt is not None and end_dt is not None:
+                # Ensure start_dt and end_dt are aware if the dataframe is aware
+                if df_pivot.index.tz is not None:
+                    if start_dt.tzinfo is None:
+                        start_dt = start_dt.tz_localize('UTC')
+                    if end_dt.tzinfo is None:
+                        end_dt = end_dt.tz_localize('UTC')
+                elif start_dt.tzinfo is not None:
+                    # If df is naive but start_dt is aware, make start_dt naive
+                    start_dt = start_dt.tz_localize(None)
+                    end_dt = end_dt.tz_localize(None)
+                
+                # ENTSO-E intervals usually represent the start of the period.
+                # The last 4-second interval starts at end_dt - 4s.
+                full_index = pd.date_range(start=start_dt, end=end_dt - timedelta(seconds=4), freq='4s', name='timestamp')
+                df_pivot = df_pivot.reindex(full_index)
+            
+            df_pivot.index.name = 'timestamp'
             return df_pivot
         else:
             # Generic return

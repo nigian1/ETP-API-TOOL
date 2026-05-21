@@ -97,7 +97,6 @@ if __name__ == "__main__":
                         "LV",
                         "LT",
                         "LU",
-                        "MT",
                         "NL",
                         "NO1",
                         "NO2",
